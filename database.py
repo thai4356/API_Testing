@@ -19,7 +19,6 @@ def get_session():
         yield session
 
 def init_db() -> None:
-    # PHẢI import tất cả model để chúng được đăng ký
     from entity.User import User         # noqa: F401
     from entity.Course import Course     # noqa: F401
     from entity.Enrollment import Enrollment  # noqa: F401
