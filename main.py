@@ -8,7 +8,12 @@ from controller.UserController import router as user_router
 from controller.CourseController import router as course_router
 from controller.EnrollmentController import router as enrollment_router
 from sqlmodel import select
+from fastapi.security import OAuth2PasswordBearer
 from entity.Course import Course
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.openapi.utils import get_openapi
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")  # đường dẫn login hiện có của bạn
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -44,9 +49,31 @@ with Session(engine) as session:
         session.commit()
         print("✅ Seeded 4 demo courses")
 
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="FastAPI Project",
+        version="1.0.0",
+        description="API docs with JWT auth",
+        routes=app.routes,
+    )
+    openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    }
+    openapi_schema["security"] = [{"BearerAuth": []}]
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
 
 app = FastAPI(title="FastAPIProject", lifespan=lifespan)
 
+app.openapi = custom_openapi
 # include routers
 app.include_router(user_router)
 app.include_router(course_router)
