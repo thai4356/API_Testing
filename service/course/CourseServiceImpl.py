@@ -1,3 +1,4 @@
+# service/course/CourseServiceImpl.py
 from typing import List
 from entity.Course import Course
 from repository.course.CourseRepository import CourseRepository
@@ -9,6 +10,9 @@ class CourseServiceImpl(CourseService):
 
     def list_courses(self) -> List[Course]:
         return self.repo.get_all()
+
+    def list_courses_page(self, limit: int, offset: int) -> List[Course]:
+        return self.repo.get_page(limit=limit, offset=offset)
 
     def create_course(self, title: str, description: str | None, difficulty: str) -> Course:
         return self.repo.create(Course(title=title, description=description, difficulty=difficulty))

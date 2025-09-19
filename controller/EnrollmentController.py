@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlmodel import Session
 from database import get_session
 from repository.enrollment.EnrollmentRepository import EnrollmentRepository
@@ -30,7 +30,7 @@ def require_user(authorization: str | None = Header(default=None)) -> str:
         raise HTTPException(status_code=401, detail="Invalid token payload")
     return sub
 
-@router.post("/enrollments", status_code=201)
+@router.post("/enrollments", status_code=status.HTTP_201_CREATED)
 def enroll(
     req: AddEnrollmentReq,
     _user: str = Depends(require_user),
@@ -40,8 +40,12 @@ def enroll(
         service.enroll(req.studentEmail, req.courseId)
         return {"message": "Enrolled successfully"}
     except ValueError as e:
-        # invalid gmail exists / course not found / already enrolled
-        raise HTTPException(status_code=400, detail=str(e))
+        msg = str(e)
+        if "Already enrolled" in msg:
+            raise HTTPException(status_code=409, detail=msg)   # Conflict
+        if "not exist" in msg or "not found" in msg:
+            raise HTTPException(status_code=404, detail=msg)   # Not found
+        raise HTTPException(status_code=400, detail=msg)
 
 @router.get("/students/{email}/enrollments", response_model=List[EnrollmentListRes])
 def get_student_enrollments(
@@ -49,7 +53,7 @@ def get_student_enrollments(
     _user: str = Depends(require_user),
     service: EnrollmentServiceImpl = Depends(get_service),
 ):
-    # kiểm tra user có tồn tại hay không
+    #check user
     from entity.User import User
     user = service.enroll_repo.session.exec(
         select(User).where(User.email == email)

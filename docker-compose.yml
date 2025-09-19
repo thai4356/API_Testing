@@ -1,0 +1,45 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: fastapi_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: soniclab
+    ports:
+      - "3308:3306"                 # host:container
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db_init:/docker-entrypoint-initdb.d:ro   # <== thêm dòng này
+
+  api:
+    build: .
+    container_name: fastapi_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: soniclab
+      JWT_PRIVATE_KEY_PATH: /app/oauth_key/oauth-private.key
+      JWT_PUBLIC_KEY_PATH: /app/oauth_key/oauth-public.key
+    volumes:
+      - .:/app                      # hot-reload khi dev
+    ports:
+      - "8000:8000"
+
+
+volumes:
+  db_data:

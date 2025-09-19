@@ -1,10 +1,9 @@
 from typing import List
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlmodel import Session
 from database import get_session
 from repository.course.CourseRepository import CourseRepository
-from service.course.CourseServiceImpl import CourseServiceImpl  # <-- nếu thư mục là 'course', dùng dòng dưới:
-# from service.course.CourseServiceImpl import CourseServiceImpl
+from service.course.CourseServiceImpl import CourseServiceImpl
 from dto.request.course.AddCourseReq import AddCourseReq
 from dto.response.course.CourseListRes import CourseListRes
 from oauth_key.auth import decode_token
@@ -15,7 +14,6 @@ def get_course_service(session: Session = Depends(get_session)) -> CourseService
     repo = CourseRepository(session)
     return CourseServiceImpl(repo)
 
-# simple JWT dependency inside this controller (no new files)
 def require_user(authorization: str | None = Header(default=None)) -> str:
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
@@ -36,11 +34,19 @@ def list_courses(
 ):
     return service.list_courses()
 
-@router.post("/", response_model=CourseListRes, status_code=201)
+@router.get("/page", response_model=List[CourseListRes])
+def list_courses_page(
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    _user: str = Depends(require_user),
+    service: CourseServiceImpl = Depends(get_course_service),
+):
+    return service.list_courses_page(limit=limit, offset=offset)
+
+@router.post("/", response_model=CourseListRes, status_code=456)
 def add_course(
     payload: AddCourseReq,
     _user: str = Depends(require_user),
     service: CourseServiceImpl = Depends(get_course_service),
 ):
-    course = service.create_course(payload.title, payload.description, payload.difficulty)
-    return course
+    return service.create_course(payload.title, payload.description, payload.difficulty)
