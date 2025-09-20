@@ -26,6 +26,7 @@ cd FastAPIProject
 curl -X POST http://localhost:8000/api/login \
  -H "Content-Type: application/json" \
  -d '{"email":"admin@gmail.com","password":"admin123"}' --- default generated one
+ sxDjsPmRdVpojnNeZoZUNaOASTDXhRqV
 
 2.Copy access_token from the response and use it in all requests:
 Authorization: Bearer <access_token>
