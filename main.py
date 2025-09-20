@@ -79,6 +79,9 @@ app.include_router(user_router)
 app.include_router(course_router)
 app.include_router(enrollment_router)
 
+@app.get("/ping")
+def ping():
+    return {"msg": "pong"}
 
 # DEBUG: in route list để chắc chắn router đã đăng ký
 for r in app.routes:
