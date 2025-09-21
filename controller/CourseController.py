@@ -8,7 +8,7 @@ from dto.request.course.AddCourseReq import AddCourseReq
 from dto.response.course.CourseListRes import CourseListRes
 from oauth_key.auth import decode_token
 
-router = APIRouter(prefix="/api/courses", tags=["courses"])
+router = APIRouter(prefix="/courses", tags=["courses"])
 
 def get_course_service(session: Session = Depends(get_session)) -> CourseServiceImpl:
     repo = CourseRepository(session)

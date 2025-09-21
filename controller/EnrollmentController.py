@@ -10,7 +10,7 @@ from dto.response.enrollment.EnrollmentListRes import EnrollmentListRes
 from oauth_key.auth import decode_token
 from sqlmodel import select
 
-router = APIRouter(prefix="/api", tags=["enrollments"])
+router = APIRouter(prefix="", tags=["enrollments"])
 
 def get_service(session: Session = Depends(get_session)) -> EnrollmentServiceImpl:
     enroll_repo = EnrollmentRepository(session)

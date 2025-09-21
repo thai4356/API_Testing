@@ -7,7 +7,7 @@ from repository.user.UserRepository import UserRepository
 from service.user.UserServiceImpl import UserServiceImpl
 from oauth_key.auth import create_access_token
 
-router = APIRouter(prefix="/api", tags=["auth"])
+router = APIRouter(prefix="", tags=["auth"])
 
 def get_user_service(session: Session = Depends(get_session)) -> UserServiceImpl:
     repo = UserRepository(session)

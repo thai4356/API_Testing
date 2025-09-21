@@ -13,7 +13,7 @@ from entity.Course import Course
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.openapi.utils import get_openapi
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")  # đường dẫn login hiện có của bạn
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")  # đường dẫn login hiện có của bạn
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
