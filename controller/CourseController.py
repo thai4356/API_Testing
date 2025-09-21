@@ -43,7 +43,7 @@ def list_courses_page(
 ):
     return service.list_courses_page(limit=limit, offset=offset)
 
-@router.post("/", response_model=CourseListRes, status_code=456)
+@router.post("/", response_model=CourseListRes, status_code=201)
 def add_course(
     payload: AddCourseReq,
     _user: str = Depends(require_user),

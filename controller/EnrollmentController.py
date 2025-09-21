@@ -9,7 +9,9 @@ from dto.request.enrollment.AddEnrollmentReq import AddEnrollmentReq
 from dto.response.enrollment.EnrollmentListRes import EnrollmentListRes
 from oauth_key.auth import decode_token
 from sqlmodel import select
-
+from urllib.parse import unquote
+from sqlalchemy import func
+from entity.User import User
 router = APIRouter(prefix="", tags=["enrollments"])
 
 def get_service(session: Session = Depends(get_session)) -> EnrollmentServiceImpl:
@@ -53,12 +55,17 @@ def get_student_enrollments(
     _user: str = Depends(require_user),
     service: EnrollmentServiceImpl = Depends(get_service),
 ):
-    #check user
-    from entity.User import User
-    user = service.enroll_repo.session.exec(
-        select(User).where(User.email == email)
-    ).first()
-    if not user:
+    # decode %40 thành @
+    email = unquote(email).strip()
+
+    # ✅ Kết quả là int luôn, không cần [0]
+    exists = service.enroll_repo.session.exec(
+        select(func.count())
+        .select_from(User)
+        .where(func.lower(User.email) == email.lower())
+    ).one()
+
+    if exists == 0:
         raise HTTPException(status_code=404, detail="Student email not found")
 
     pairs = service.list_student_courses(email)
