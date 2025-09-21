@@ -18,6 +18,9 @@ other database you just need to change the database.pyfile
 + after that just paste -- fastapi dev main.py -- and the program should run now / you can use docker to run it faster without setting up ( step 6 )
 + all end point i used require authentication jwt so you must get token before testing ( just do the following steps )
 
+- Or you can try it only by this link the api should be the same below but without the /api part
+https://fast-apip-roject-git-main-trn-quc-thais-projects.vercel.app/docs
+
 Remember to clone it first
 git clone https://github.com/thai4356/API_Testing
 cd FastAPIProject
