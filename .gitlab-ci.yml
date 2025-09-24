@@ -3,26 +3,46 @@ stages:
   - test
   - deploy
 
-lint:
+# Dùng shell runner trên Windows: KHÔNG dùng image
+# Gợi ý biến cache pip (không bắt buộc)
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR\\.cache\\pip"
+
+lint:mr:
   stage: lint
-  image: python:3.12
-  script:
+  tags: [ "windows" ]             # trùng tag runner bạn đã register
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'   # chạy khi mở/cập nhật MR
+    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push"'  # và khi push vào develop
+  before_script:
+    - python --version
+    - pip install --upgrade pip
     - pip install ruff
+  script:
     - ruff check .
 
-test:
+test:mr:
   stage: test
-  image: python:3.12
+  tags: [ "windows" ]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push"'
+  before_script:
+    - python --version
+    - pip install --upgrade pip
+    - if exist requirements.txt (pip install -r requirements.txt) else (echo "no requirements.txt")
+    - pip install pytest
   script:
-    - pip install -r requirements.txt
     - pytest -q
 
-deploy:
+deploy:develop:
   stage: deploy
+  tags: [ "windows" ]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push"'
   script:
     - echo "Deploying..."
-    - curl -X POST https://jenkins.example.com/job/deploy/buildWithParameters \
-        --user "$JENKINS_USER:$JENKINS_TOKEN" \
-        --data-urlencode "BRANCH=$CI_COMMIT_BRANCH"
-  only:
-    - develop
+    - |
+      $url = "$env:JENKINS_URL/job/deploy/buildWithParameters"
+      $auth = "$env:JENKINS_USER`:$env:JENKINS_TOKEN"
+      curl.exe -X POST $url --user $auth --data-urlencode "BRANCH=$env:CI_COMMIT_BRANCH"
