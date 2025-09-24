@@ -1,0 +1,28 @@
+stages:
+  - lint
+  - test
+  - deploy
+
+lint:
+  stage: lint
+  image: python:3.12
+  script:
+    - pip install ruff
+    - ruff check .
+
+test:
+  stage: test
+  image: python:3.12
+  script:
+    - pip install -r requirements.txt
+    - pytest -q
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying..."
+    - curl -X POST https://jenkins.example.com/job/deploy/buildWithParameters \
+        --user "$JENKINS_USER:$JENKINS_TOKEN" \
+        --data-urlencode "BRANCH=$CI_COMMIT_BRANCH"
+  only:
+    - develop
