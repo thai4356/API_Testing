@@ -1,36 +1,27 @@
+properties([
+    pipelineTriggers([githubPush()])
+])
+
 pipeline {
     agent any
-
-    triggers {
-        githubPush()   // nếu GitHub
-        // gitlab(triggerOnPush: true, triggerOnMergeRequest: true) // nếu GitLab
-    }
-
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Build') {
             steps {
-                echo "Building project..."
-                // Ví dụ: sh 'mvn clean install' hoặc npm install && npm run build
+                sh 'echo "Building..."'
             }
         }
-
         stage('Test') {
             steps {
-                echo "Running tests..."
-                // Ví dụ: sh 'mvn test'
+                sh 'echo "Running tests..."'
             }
         }
-
-        stage('Deploy') {
-            steps {
-                echo "Deploying..."
-            }
+    }
+    post {
+        success {
+            githubNotify context: 'CI/CD', status: 'SUCCESS', description: 'Build passed'
+        }
+        failure {
+            githubNotify context: 'CI/CD', status: 'FAILURE', description: 'Build failed'
         }
     }
 }
