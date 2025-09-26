@@ -1,0 +1,88 @@
+stages:
+  - lint
+  - test
+  - build
+  - publish
+
+variables:
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE/fastapi-app"
+  PYTHON_VERSION: "3.11"
+
+# Lint
+lint:
+  image: python:$PYTHON_VERSION
+  stage: lint
+  tags:
+    - my-runner-tag
+  before_script:
+    - pip install --upgrade pip
+    - pip install flake8
+  script:
+    - flake8 src tests || true   # trả non-zero nếu muốn fail pipeline; sửa tùy
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH =~ /^feature\//'
+
+# Unit tests
+unit_test:
+  image: python:$PYTHON_VERSION
+  stage: test
+  tags:
+    - my-runner-tag
+  before_script:
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install pytest
+  script:
+    - pytest -q
+  artifacts:
+    when: always
+    paths:
+      - .pytest_cache/
+      - reports/
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH =~ /^feature\//'
+
+# Build Docker image (only on merge requests or feature branches)
+build_image:
+  image: docker:24.0.5
+  services:
+    - docker:dind
+  stage: build
+  tags:
+    - docker-runner
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - docker info
+  script:
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
+    - docker save $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -o image.tar || true
+  artifacts:
+    paths:
+      - image.tar
+    expire_in: 1h
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH =~ /^feature\//'
+
+# Publish (push) image to registry — this runs only on develop (after merge) or build branch if you prefer
+publish_image:
+  image: docker:24.0.5
+  services:
+    - docker:dind
+  stage: publish
+  tags:
+    - docker-runner
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+  script:
+    - docker build -t $IMAGE_NAME:latest .
+    - docker push $IMAGE_NAME:latest
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
